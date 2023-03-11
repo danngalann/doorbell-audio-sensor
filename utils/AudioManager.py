@@ -1,3 +1,5 @@
+import math
+
 import pyaudio
 import wave
 
@@ -18,14 +20,12 @@ class AudioManager:
                              rate=self.RATE,
                              input=True,
                              frames_per_buffer=self.CHUNK)
-        print("Recording...")
 
         frames = []
         for i in range(0, int(self.RATE / self.CHUNK * duration)):
             data = stream.read(self.CHUNK)
             frames.append(data)
 
-        print("Done recording.")
         stream.stop_stream()
         stream.close()
 
@@ -37,12 +37,10 @@ class AudioManager:
                              rate=self.RATE,
                              output=True,
                              frames_per_buffer=self.CHUNK)
-        print("Playing back...")
 
         for frame in frames:
             stream.write(frame)
 
-        print("Done playing.")
         stream.stop_stream()
         stream.close()
 
@@ -53,7 +51,6 @@ class AudioManager:
                              rate=wf.getframerate(),
                              output=True,
                              frames_per_buffer=self.CHUNK)
-        print("Playing back from file...")
 
         frames = []
         data = wf.readframes(self.CHUNK)
@@ -61,18 +58,25 @@ class AudioManager:
             frames.append(data)
             data = wf.readframes(self.CHUNK)
 
-        print("Done playing from file.")
         stream.stop_stream()
         stream.close()
 
         return frames
 
-    def get_frequencies(self, frames):
+    @staticmethod
+    def get_frequencies(frames) -> np.ndarray:
         samples = np.frombuffer(b''.join(frames), dtype=np.int16)
         frequencies = np.fft.rfft(samples)
         frequencies = abs(frequencies)
 
         return frequencies
+
+    @staticmethod
+    def get_decibels(frames) -> float:
+        samples = np.frombuffer(b''.join(frames), dtype=np.int16)
+        rms = np.sqrt(np.mean(np.square(samples)))
+
+        return abs(20 * math.log10(rms / 32767))
 
     def cleanup(self):
         self.p.terminate()
