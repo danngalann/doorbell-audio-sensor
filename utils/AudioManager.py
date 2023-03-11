@@ -1,3 +1,5 @@
+import wave
+
 import pyaudio
 
 
@@ -40,6 +42,24 @@ class AudioManager:
             stream.write(frame)
 
         print("Done playing.")
+        stream.stop_stream()
+        stream.close()
+
+    def play_from_file(self, filename):
+        wf = wave.open(filename, 'rb')
+        stream = self.p.open(format=self.p.get_format_from_width(wf.getsampwidth()),
+                             channels=wf.getnchannels(),
+                             rate=wf.getframerate(),
+                             output=True,
+                             frames_per_buffer=self.CHUNK)
+        print("Playing back from file...")
+
+        data = wf.readframes(self.CHUNK)
+        while data:
+            stream.write(data)
+            data = wf.readframes(self.CHUNK)
+
+        print("Done playing from file.")
         stream.stop_stream()
         stream.close()
 
